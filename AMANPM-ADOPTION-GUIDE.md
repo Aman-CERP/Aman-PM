@@ -23,15 +23,35 @@ Throughout this guide, features are marked with their adoption priority:
 ## Table of Contents
 
 1. [Philosophy & Foundations](#part-1-philosophy--foundations)
+   - [Premium Engineering Mindset](#premium-engineering-mindset--core)
+   - [Two-Layer Knowledge Architecture](#two-layer-knowledge-architecture--core)
+   - [SSOT Hierarchy & Conflict Resolution](#ssot-hierarchy--conflict-resolution--core)
 2. [Directory Structure](#part-2-directory-structure-setup)
 3. [Configuration & Schemas](#part-3-configuration--schemas)
 4. [Work Item Templates](#part-4-work-item-templates)
+   - [Definition of Ready (DoR)](#definition-of-ready-dor--core)
+   - [Definition of Done (DoD)](#definition-of-done-dod--core)
+   - [Engineering Workflow Contract](#engineering-workflow-contract--core)
 5. [The /aman Skill](#part-5-the-aman-skill-implementation)
+   - [WSJF Prioritization](#wsjf-prioritization--recommended)
 6. [Memory System](#part-6-memory-system)
+   - [Three-Tier Memory Architecture](#three-tier-memory-architecture--core)
+   - [Memory Bank (Hot Memory)](#memory-bank-hot-memory--core)
 7. [Sprint Lifecycle](#part-7-sprint-lifecycle)
+   - [Parallel Development Streams](#parallel-development-streams--recommended)
+   - [Mid-Sprint Change Management](#mid-sprint-change-management--core)
+   - [Rearchitecture Workflow](#rearchitecture-workflow--recommended)
 8. [Migration Strategies](#part-8-migration-strategies)
 9. [Progressive Adoption](#part-9-progressive-adoption)
 10. [Best Practices & Anti-Patterns](#part-10-best-practices--anti-patterns)
+    - [Do It Now Philosophy](#do-it-now-philosophy--core)
+    - [Knowledge Lifecycle](#knowledge-lifecycle-create--curate--retire--recommended)
+    - [Search-Fix-Learn Debugging](#search-fix-learn-debugging--recommended)
+    - [Interface-First Specification](#interface-first-specification--recommended)
+    - [Performance Budgets](#performance-budgets--recommended)
+    - [Graceful Degradation](#graceful-degradation--optional)
+    - [Unix Philosophy Verification](#unix-philosophy-verification--recommended)
+    - [The 90/9/1 Rule](#the-9091-rule--optional)
 11. [Claude Code Integration](#part-11-claude-code-integration)
 12. [Troubleshooting](#part-12-troubleshooting)
 - [Appendix A: Quick Reference](#appendix-a-quick-reference-card)
@@ -45,6 +65,28 @@ Throughout this guide, features are marked with their adoption priority:
 ### The Core Problem
 
 AI coding assistants create artifacts (code, docs, specs) faster than humans can consolidate. Traditional PM tools cannot keep pace. New patterns are needed.
+
+### Premium Engineering Mindset 🔹 **Core**
+
+**Philosophy:** "We don't ship 'good enough'. We ship excellent."
+
+AmanPM is more than a PM system—it's a discipline multiplier. Premium Engineering means:
+
+| Principle | What It Looks Like |
+|-----------|-------------------|
+| **Pride in Every Line** | Code you'd confidently show to any senior engineer |
+| **Right the First Time** | Quality is the starting point, not the goal |
+| **Build for the Reader** | Every line will be read 100x more than written |
+| **Proactive Excellence** | Prevent problems, don't just fix them |
+| **Zero Tolerance for Shortcuts** | CI failures, lint warnings, test gaps = immediate action |
+
+**The Premium Test:** Before marking anything "done", ask: *"Would I stake my reputation on this?"*
+
+This mindset drives all AmanPM practices:
+- **TDD** catches bugs before they exist
+- **Specs** prevent wasted work
+- **Quality gates** ensure no surprises
+- **"Do It Now"** eliminates debt accumulation
 
 ### The AI-Native Solution
 
@@ -108,6 +150,39 @@ This means:
 | **Quality** | Final validation | Continuous verification |
 | **Learning** | Strategic decisions | Pattern recognition |
 
+### Two-Layer Knowledge Architecture 🔹 **Core**
+
+AmanPM separates knowledge into two layers for optimal AI performance:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 1: CONSTITUTION (CLAUDE.md)                         │
+│  Always loaded, high-signal, critical rules                │
+├─────────────────────────────────────────────────────────────┤
+│  • Project identity and current state                      │
+│  • Non-negotiable workflow rules                           │
+│  • SSOT hierarchy and conflict resolution                  │
+│  • Key file locations                                      │
+│  • DO NOT artificially limit length—focus on high-signal   │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                    Retrieves on demand
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  LAYER 2: DISCOVERY (Skills, Guides, Knowledge)            │
+│  Loaded when needed, detailed procedures                   │
+├─────────────────────────────────────────────────────────────┤
+│  • .claude/skills/ - Domain expertise on demand            │
+│  • .aman-pm/memory-bank/ - Constraints and decisions       │
+│  • .aman-pm/knowledge/ - Historical learnings              │
+│  • Validation guides, templates, procedures                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key Principle:** Layer 2 is ADDITIVE to Layer 1, not a replacement. High-value instructions stay in CLAUDE.md; detailed procedures go to skills/guides.
+
+**When to Use RAG:** For projects with documentation exceeding ~100K tokens, consider local RAG tools (e.g., `mcp-local-rag`) to make Layer 2 searchable.
+
 ### The Three-Layer Architecture
 
 ```
@@ -169,6 +244,26 @@ These rules are **non-negotiable**. Violating them breaks the system.
 - Strategic files require human approval before AI modification
 - Session end ritual is the memory checkpoint—skip it, lose learnings
 
+### SSOT Hierarchy & Conflict Resolution 🔹 **Core**
+
+When files contain conflicting information, this hierarchy determines truth:
+
+| Information | Authoritative Source | Other Files |
+|-------------|---------------------|-------------|
+| Work item details | `backlog/**/active/*.yaml` | `index.yaml` displays, doesn't own |
+| Sprint state | `sprints/active/N/items.yaml` | `index.yaml` is snapshot |
+| Project config | `config.yaml` | Nothing else |
+| Feature status | Work item files | `index.yaml` counts are derived |
+| Learnings | `knowledge/learnings.md` | `index.yaml` shows top 5 |
+
+**Conflict Resolution Rules:**
+
+1. **Status conflict:** Backlog files win. Regenerate `index.yaml` via `/aman sync`.
+2. **Count mismatch:** Run `/aman sync` to regenerate from source files.
+3. **Version conflict:** `config.yaml` wins. Update displays to match.
+
+> **Rule:** `index.yaml` is ALWAYS derived. If it conflicts with source files, **regenerate it, don't edit it**.
+
 ---
 
 ## Part 2: Directory Structure Setup
@@ -225,12 +320,21 @@ Create this structure in your project:
 │   └── archive/             # Completed sessions
 │       └── sprint-{N}/
 │
-├── knowledge/               # Persistent memory
+├── memory-bank/             # Hot memory (always loaded)
+│   ├── architectural-constraints.md  # Core project constraints
+│   ├── active-decisions.md  # Pending decisions
+│   └── session-context.md   # Current session state
+│
+├── knowledge/               # Cold storage (on-demand)
 │   ├── learnings.md         # Technical discoveries
 │   ├── learnings-archive/   # Summarized old learnings
 │   ├── decisions.md         # Decision log
 │   ├── patterns.md          # Observed patterns
 │   └── velocity.json        # Historical velocity
+│
+├── rearchitecture/          # Architecture change proposals
+│   ├── active/              # In-progress proposals
+│   └── completed/           # Completed rearchitectures
 │
 ├── templates/               # Item creation templates
 │   ├── epic.yaml
@@ -798,6 +902,208 @@ For bugs/debt:
   → resolved (fixed)
 ```
 
+### Definition of Ready (DoR) 🔹 **Core**
+
+Items must meet the **Definition of Ready** before entering a sprint. This prevents sprint disruption from unclear or blocked items.
+
+**Universal DoR Checklist:**
+
+```markdown
+## Definition of Ready
+
+Before an item can enter a sprint:
+
+- [ ] Title is clear and action-oriented
+- [ ] Acceptance criteria defined and testable
+- [ ] Dependencies identified and documented
+- [ ] Complexity estimated (T-shirt size)
+- [ ] No blocking items remain unresolved
+- [ ] Technical approach agreed (for M/L/XL items)
+```
+
+**Per-Type DoR Requirements:**
+
+| Type | Additional DoR |
+|------|----------------|
+| **Feature** | Spec exists or drafted; parent epic identified |
+| **Bug** | Reproduction steps documented; severity assessed |
+| **Spike** | Research question clearly stated; timebox defined |
+| **Debt** | Impact and scope defined; affected files listed |
+| **Task** | Parent feature identified; action clearly stated |
+
+**DoR Validation in `/aman groom`:**
+
+When grooming the backlog, check each item against DoR:
+
+```yaml
+# /aman groom output
+dor_validation:
+  ready_items: 5
+  not_ready:
+    - id: FEAT-003
+      missing: ["acceptance_criteria", "complexity"]
+    - id: BUG-012
+      missing: ["reproduction_steps"]
+```
+
+**DoR Enforcement:**
+
+> **Rule:** Items that fail DoR cannot be added to a sprint. They must be clarified first.
+
+### Definition of Done (DoD) 🔹 **Core**
+
+Items must meet the **Definition of Done** before being marked complete. This ensures consistent quality and prevents technical debt.
+
+**Universal DoD Checklist:**
+
+```markdown
+## Definition of Done
+
+An item is DONE when:
+
+- [ ] Code complete and compiles without errors
+- [ ] All tests pass (unit + integration if applicable)
+- [ ] CI pipeline green (if using CI)
+- [ ] Self-review or peer review completed
+- [ ] Learning captured (if any discovery during implementation)
+- [ ] Documentation updated (if behavior changed)
+```
+
+**Per-Type DoD Requirements:**
+
+| Type | Additional DoD |
+|------|----------------|
+| **Feature** | Acceptance criteria verified; validation guide created |
+| **Bug** | Root cause documented; regression test added |
+| **Spike** | Findings documented; recommendation provided |
+| **Debt** | Tech debt entry updated; no new debt introduced |
+| **Task** | Parent feature updated; no orphaned code |
+
+**DoD Template for Features:**
+
+```yaml
+# Feature DoD Checklist
+dod:
+  code_complete: true
+  tests_pass: true
+  ci_green: true
+  acceptance_criteria:
+    - AC01: verified
+    - AC02: verified
+    - AC03: verified
+  validation_guide_created: true
+  learning_captured: true  # or "none"
+  documentation_updated: true
+```
+
+**DoD Enforcement:**
+
+> **Rule:** Items that fail DoD cannot be moved to `done/`. They remain `in_progress` until all criteria are met.
+
+**Integration with `/aman done`:**
+
+When running `/aman done FEAT-001`, the command should:
+1. Display DoD checklist for that item type
+2. Confirm each criterion is met
+3. Only archive if all criteria pass
+4. Log any captured learnings
+
+### Engineering Workflow Contract 🔹 **Core**
+
+Beyond DoR/DoD, this contract defines non-negotiable engineering practices. Violating it accumulates hidden debt.
+
+#### Spec-Before-Code
+
+**Rule:** No implementation starts without a specification.
+
+Before writing ANY code:
+- [ ] Spec exists with testable acceptance criteria (Given-When-Then format)
+- [ ] Dependencies identified and documented
+- [ ] Business need traceable to spec
+- [ ] Technical approach agreed (for M/L/XL items)
+
+> **No specification = No code.**
+
+#### TDD with CI Parity
+
+**Rule:** Tests drive implementation. Local must match CI exactly.
+
+| Phase | Action |
+|-------|--------|
+| **RED** | Write failing test from acceptance criteria |
+| **GREEN** | Write minimum code to pass |
+| **REFACTOR** | Clean while tests stay green |
+| **LINT** | Fix all warnings (full codebase, not just changed files) |
+| **CI-CHECK** | Run equivalent of CI locally (exit code 0 required) |
+
+**Verify Extension (Beyond Classic TDD):**
+- Observability: Can operations be traced?
+- Audit: Are decisions logged?
+- Security: No vulnerabilities introduced?
+
+#### Validation Guide Requirement 🔹 **Core**
+
+**Rule:** Every feature produces a self-contained validation guide.
+
+**Required Sections:**
+1. **Quick Start** (4-5 commands for experienced users)
+2. **Prerequisites** (exact versions, services)
+3. **Test Data Setup** (scripts, not manual entry)
+4. **Validation Scenarios** (command → expected output)
+5. **Pass/Fail Criteria** (boolean checklist)
+6. **Cleanup** (reproducible reset)
+
+**Anti-Pattern (NEVER do this):**
+
+```bash
+# ❌ WRONG - Requires human interpretation
+export TOKEN="<your-jwt-token-here>"
+TENANT_ID="<your-tenant-uuid>"
+
+# ✅ CORRECT - Self-contained acquisition
+export TOKEN=$(./scripts/get-token.sh alice)
+TENANT_ID=$(curl -s localhost:8080/api/v1/tenants | jq -r '.[0].id')
+```
+
+> A new developer with zero prior knowledge should complete validation using copy-paste only.
+
+#### Human Validation Gate 🔹 **Core**
+
+**Rule:** AI pauses after implementation. Human validates before marking complete.
+
+```
+Implementation Flow:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. AI implements feature following TDD
+2. AI runs CI parity check (must pass)
+3. AI creates validation guide
+4. AI reports: "Ready for validation"
+5. **AI STOPS** - Does not mark complete
+6. Human executes validation guide
+7. Human says: "F## validated" (explicit trigger phrase)
+8. Only then: AI updates status to Complete
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+> This gate prevents "technically correct but wrong" implementations.
+
+#### Five-Gate Quality System 🔸 **Recommended**
+
+For high-quality projects, implement a sequential quality gate system:
+
+| Gate | Name | Pass Criteria |
+|------|------|---------------|
+| **1** | Specification | Spec exists, ACs testable, dependencies clear |
+| **2** | TDD Compliance | RED-GREEN-REFACTOR followed, tests cover ACs |
+| **3** | CI Parity | Local CI check passes (lint, tests, security) |
+| **4** | Validation Guide | Self-contained guide created, zero placeholders |
+| **5** | Human Validation | Human executes guide, says "F## validated" |
+
+**Gate Enforcement:**
+- Gates are sequential (no skipping to Gate 5)
+- AI MUST pause after Gate 4, wait for human
+- Blocked gates emit warnings, not silent failures
+
 ---
 
 ## Part 5: The /aman Skill Implementation
@@ -973,17 +1279,120 @@ EOF
 - When count discrepancies are detected
 - As a validation step during sprint-end
 
+### WSJF Prioritization 🔸 **Recommended**
+
+**Weighted Shortest Job First (WSJF)** is a prioritization method that balances urgency against effort. Use it during `/aman groom` to scientifically rank backlog items.
+
+**Formula:**
+
+```
+WSJF = Cost of Delay / Job Size
+```
+
+Where:
+- **Cost of Delay** = Business Value + Time Criticality + Risk Reduction (each 1-10)
+- **Job Size** = Complexity score (XS=1, S=2, M=4, L=8, XL=16)
+
+**Configuration:**
+
+```yaml
+# Add to config.yaml
+prioritization:
+  method: "WSJF"
+  formula: "cost_of_delay / job_size"
+
+  cost_of_delay_factors:
+    - user_value      # 1-10: How much users want this
+    - time_criticality # 1-10: Does delay reduce value?
+    - risk_reduction  # 1-10: Does this reduce project risk?
+
+  job_size_mapping:
+    XS: 1
+    S: 2
+    M: 4
+    L: 8
+    XL: 16
+```
+
+**WSJF Calculation Example:**
+
+| Item | User Value | Time Critical | Risk Reduction | CoD | Size | WSJF |
+|------|------------|---------------|----------------|-----|------|------|
+| FEAT-001 | 8 | 5 | 3 | 16 | M (4) | **4.0** |
+| FEAT-002 | 6 | 8 | 2 | 16 | L (8) | **2.0** |
+| BUG-003 | 3 | 9 | 7 | 19 | S (2) | **9.5** |
+
+→ Priority order: BUG-003 (9.5) > FEAT-001 (4.0) > FEAT-002 (2.0)
+
+**Integration with `/aman groom`:**
+
+```yaml
+# /aman groom output
+grooming_results:
+  ready_items: 5
+  blocked_items: 2
+  needs_clarification: 1
+
+  wsjf_ranked:
+    - id: BUG-003
+      wsjf_score: 9.5
+      recommendation: "Sprint candidate (high WSJF)"
+    - id: FEAT-001
+      wsjf_score: 4.0
+      recommendation: "Sprint candidate"
+    - id: FEAT-002
+      wsjf_score: 2.0
+      recommendation: "Consider deferring"
+
+  stale_items:
+    - id: TASK-015
+      days_untouched: 14
+      recommendation: "Archive or reprioritize"
+```
+
+**When to Use WSJF:**
+
+| Scenario | Use WSJF? | Reason |
+|----------|-----------|--------|
+| Backlog >20 items | ✅ Yes | Need systematic ranking |
+| Multiple competing features | ✅ Yes | Objective prioritization |
+| Small backlog (<10 items) | ⚪ Optional | Simple P0-P3 may suffice |
+| All items similar size | ⚪ Optional | WSJF adds little value |
+
+**Simplified WSJF (Quick Mode):**
+
+For faster grooming, use simplified scoring:
+
+```
+Quick WSJF = Priority Weight / Size
+
+Where:
+- P0 = 16, P1 = 8, P2 = 4, P3 = 2
+- Size = T-shirt mapping (XS=1...XL=16)
+```
+
 ---
 
 ## Part 6: Memory System
 
-### Two-Tier Memory Architecture 🔹 **Core**
+### Three-Tier Memory Architecture 🔹 **Core**
 
-AmanPM uses a two-tier memory system to balance context richness with token efficiency:
+AmanPM uses a three-tier memory system to balance context richness with token efficiency:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    TIER 1: ALWAYS LOAD                      │
+│              TIER 0: HOT MEMORY (memory-bank/)              │
+│                   (Always loaded first)                     │
+├─────────────────────────────────────────────────────────────┤
+│  • Architectural constraints (critical project rules)       │
+│  • Active decisions pending resolution                      │
+│  • Current session context                                  │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                         Then load
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│              TIER 1: WARM MEMORY (index.yaml)               │
 │                   (Target: <1000 tokens)                    │
 ├─────────────────────────────────────────────────────────────┤
 │  • index.yaml snapshot (sprint, metrics, next_actions)      │
@@ -995,7 +1404,7 @@ AmanPM uses a two-tier memory system to balance context richness with token effi
                     When referenced
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                  TIER 2: ON-DEMAND                          │
+│              TIER 2: COLD STORAGE (knowledge/)              │
 │                  (Loaded when needed)                       │
 ├─────────────────────────────────────────────────────────────┤
 │  • Historical learnings (learnings-archive/)                │
@@ -1005,7 +1414,103 @@ AmanPM uses a two-tier memory system to balance context richness with token effi
 └─────────────────────────────────────────────────────────────┘
 ```
 
+**Memory Tier Summary:**
+
+| Tier | Location | Purpose | When Loaded |
+|------|----------|---------|-------------|
+| **Tier 0: Hot** | `memory-bank/` | Critical constraints, active decisions | Every `/aman start` |
+| **Tier 1: Warm** | `index.yaml`, recent learnings | Sprint state, project metrics | Every `/aman start` |
+| **Tier 2: Cold** | `knowledge/`, `learnings-archive/` | Historical context | On-demand retrieval |
+
 **Tier 2 Retrieval:** When you ask "didn't we try approach X before?", the AI searches `learnings-archive/` and surfaces relevant historical context.
+
+### Memory Bank (Hot Memory) 🔹 **Core**
+
+The memory bank stores information that must be available at every session start. Unlike learnings (which are discoveries), memory bank items are **constraints** and **active decisions**.
+
+**Directory Structure:**
+
+```
+.aman-pm/memory-bank/
+├── architectural-constraints.md   # Critical project rules
+├── active-decisions.md            # Decisions pending resolution
+└── session-context.md             # Current session state
+```
+
+**Architectural Constraints Template:**
+
+```markdown
+# Architectural Constraints (Always Active)
+
+> **Purpose:** Critical constraints that must be respected in ALL implementations.
+> This file is loaded at every `/aman start`.
+
+## Core Architecture
+
+{Describe your project's core architectural pattern}
+
+**Example (Three-Brain Model for Auth):**
+
+1. **Identity Brain ({Provider})** — "WHO are you?"
+   - All authentication flows through {provider}
+   - JWT tokens contain {specific claims}
+   - Machine users use {token pattern}
+
+2. **Policy Brain ({Service})** — "WHAT can you do?"
+   - All permission checks go through {service}
+   - {Describe authorization pattern}
+
+3. **Execution Brain ({Framework})** — "HOW do we enforce it?"
+   - Middleware validates JWT before business logic
+   - {Describe middleware pattern}
+
+## Integration Rules
+
+- **Never bypass middleware** — Frontend calls API, API enforces auth
+- **Token storage** — Use httpOnly cookies or secure storage, never localStorage
+- **Tenant context** — Always pass {header} for multi-tenant operations
+
+## Anti-Patterns (Never Do)
+
+- {Anti-pattern 1}
+- {Anti-pattern 2}
+```
+
+**Active Decisions Template:**
+
+```markdown
+# Active Decisions
+
+> **Purpose:** Track decisions that are pending or recently made.
+> Move to `knowledge/decisions.md` when resolved.
+
+## Pending Decisions
+
+### {Decision Title}
+- **Status:** Pending
+- **Context:** {Why this decision is needed}
+- **Options:**
+  - Option A: {description}
+  - Option B: {description}
+- **Blocking:** {What's waiting on this decision}
+- **Due:** {Date if applicable}
+
+## Recently Resolved (Last 7 Days)
+
+### {Decision Title}
+- **Status:** Decided
+- **Decision:** {What was decided}
+- **Date:** YYYY-MM-DD
+- **ADR:** ADR-XXX (if applicable)
+```
+
+**Memory Bank Loading at Session Start:**
+
+When `/aman start` runs, it MUST:
+1. Load `memory-bank/architectural-constraints.md` (always)
+2. Load `memory-bank/active-decisions.md` (always)
+3. Surface any pending decisions as blockers
+4. Then proceed with Tier 1 loading (index.yaml, learnings)
 
 ### What Gets Remembered Where
 
@@ -1277,6 +1782,288 @@ Sprint End Checklist:
 
 > **Design Note:** Your `/aman sprint-end` implementation should prompt for incomplete items (status `ready` or `in_progress`) and ask whether to carry over, defer, or close them. This prevents orphaned items in `active/` folders.
 
+### Parallel Development Streams 🔸 **Recommended**
+
+For projects with multiple workstreams (e.g., Web + Mobile + Shared components), organize sprint items into parallel streams:
+
+**Structure:**
+- Each stream has a name, focus area, and item list
+- Streams can be independent (parallel) or dependent (sequential)
+- Retrospectives analyze per-stream performance
+
+**Sprint Items with Streams:**
+
+```yaml
+# .aman-pm/sprints/active/1/items.yaml
+sprint: 1
+goal: "Initialize Frontend Infrastructure"
+started: "2026-02-10"
+ends: "2026-02-17"
+
+streams:
+  A:
+    name: "Web Frontend"
+    focus: "Next.js scaffold + auth integration"
+    items:
+      - id: FEAT-001
+        title: "Next.js project scaffold"
+        type: feature
+        priority: P1
+        complexity: M
+        hours: 6
+        status: backlog
+        parent: EPIC-001
+  B:
+    name: "Mobile Foundation"
+    focus: "React Native setup"
+    items:
+      - id: FEAT-002
+        title: "React Native project scaffold"
+        type: feature
+        priority: P1
+        complexity: M
+        hours: 6
+        status: backlog
+        parent: EPIC-002
+  C:
+    name: "Shared Components"
+    focus: "Cross-platform auth hooks"
+    items:
+      - id: TASK-001
+        title: "Auth context provider"
+        type: task
+        priority: P1
+        complexity: S
+        hours: 3
+        status: backlog
+
+parallelization_strategy: |
+  Streams A and B are independent, can run in parallel.
+  Stream C is shared; complete before streams A/B integrate.
+
+capacity:
+  total_hours: 26
+  committed_hours: 21
+  buffer_hours: 5
+  utilization: "81%"
+```
+
+**Stream Analysis in Retrospectives:**
+
+```markdown
+## Stream Analysis
+
+| Stream | Planned | Completed | Notes |
+|--------|---------|-----------|-------|
+| A: Web | 3 items | 3 items | On track |
+| B: Mobile | 2 items | 1 item | Device setup delayed |
+| C: Shared | 2 items | 2 items | Complete |
+
+**Lesson:** Stream B needed more buffer for device setup.
+```
+
+### Mid-Sprint Change Management 🔹 **Core**
+
+Sprints need controlled flexibility. Use a **change budget** to handle unplanned work without derailing sprint goals.
+
+**Change Budget Policy:**
+
+```yaml
+# Add to config.yaml
+mid_sprint_policy:
+  change_budget: "20%"           # Max % of sprint capacity for changes
+  intake_lane: "mid_sprint_requests"
+  triage_frequency: "daily"
+
+  lanes:
+    emergency:
+      criteria: "P0 production issues only"
+      action: "Immediate swap, document impact"
+    standard:
+      criteria: "All other changes"
+      action: "Queue for next sprint or use change budget"
+
+  replanning_trigger:
+    condition: ">20% scope change"
+    action: "Re-run planning, update sprint goal"
+```
+
+**Decision Tree:**
+
+```
+New request arrives mid-sprint:
+├─ Is it P0 (production down)? → Emergency lane (immediate swap)
+├─ Is change budget available? → Use budget, document impact
+├─ Can it wait 1 week? → Queue for next sprint
+└─ >20% scope change? → Trigger replanning ceremony
+```
+
+**Change Request Template:**
+
+```markdown
+## Mid-Sprint Change Request
+
+**Item:** {ID and title}
+**Priority:** {P0/P1/P2/P3}
+**Requested By:** {name}
+**Date:** {YYYY-MM-DD}
+
+### Justification
+{Why this can't wait for next sprint}
+
+### Impact Analysis
+- Sprint capacity used: {X hours}
+- Items displaced: {list or "none"}
+- Risk if deferred: {description}
+
+### Decision
+- [ ] Approved (within change budget)
+- [ ] Deferred to next sprint
+- [ ] Emergency lane (P0 only)
+
+### Approved By: {name}
+```
+
+**Tracking Mid-Sprint Changes:**
+
+Create `.aman-pm/sprints/active/{N}/mid-sprint-changes.md` to log all changes:
+
+```markdown
+# Sprint N: Mid-Sprint Changes
+
+## Change Budget
+- Allocated: 5 hours (20% of 26)
+- Used: 2 hours
+- Remaining: 3 hours
+
+## Changes Log
+
+### 2026-02-12: BUG-042 (Emergency)
+- **Priority:** P0
+- **Hours:** 2
+- **Lane:** Emergency
+- **Impact:** Displaced TASK-003 to next sprint
+- **Outcome:** Fixed within 2 hours
+```
+
+### Rearchitecture Workflow 🔸 **Recommended**
+
+When architectural assumptions are invalidated mid-project, use a formal **rearchitecture proposal** process.
+
+**When to Use:**
+- Core architectural pattern needs to change
+- External dependency forces adaptation
+- Performance requirements invalidate current approach
+- Security finding requires structural changes
+
+**Lifecycle:** Problem → Alternatives → Impact Analysis → Approval → Implementation → ADR
+
+**Directory Structure:**
+
+```
+.aman-pm/rearchitecture/
+├── active/
+│   └── REARCH-001-frontend-auth-adaptation.md
+└── completed/
+    └── REARCH-000-example.md
+```
+
+**Rearchitecture Proposal Template:**
+
+```markdown
+---
+id: REARCH-001
+status: proposed  # proposed | approved | implementing | completed | rejected
+created: 2026-02-15
+author: {name}
+related_adr: null  # Will be set when ADR is created
+---
+
+# REARCH-001: {Title}
+
+## Problem Statement
+
+{What architectural assumption is invalidated? Why can't we continue as-is?}
+
+## Alternatives Considered
+
+### Option A: {Name}
+**Description:** {How this option works}
+**Pros:** {Benefits}
+**Cons:** {Drawbacks}
+**Effort:** {T-shirt size}
+
+### Option B: {Name}
+**Description:** {How this option works}
+**Pros:** {Benefits}
+**Cons:** {Drawbacks}
+**Effort:** {T-shirt size}
+
+## Recommendation
+
+**Selected Option:** {A or B}
+**Rationale:** {Why this option is best}
+
+## Code Impact Analysis
+
+| Area | Files Affected | Breaking Changes | Migration Required |
+|------|----------------|------------------|-------------------|
+| API | 5 files | Yes | Yes |
+| Database | 2 migrations | No | No |
+| Frontend | 10 components | Yes | Yes |
+
+## Implementation Plan
+
+1. {Step 1 with estimated effort}
+2. {Step 2 with estimated effort}
+3. {Step 3 with estimated effort}
+
+## Rollback Plan
+
+{How to revert if the rearchitecture fails}
+
+## Deprecation Candidates
+
+- {Old pattern/code to deprecate after migration}
+
+## Approval
+
+- [ ] Technical review complete
+- [ ] Impact analysis reviewed
+- [ ] Rollback plan validated
+- [ ] Human approval received
+
+**Approved By:** {name}
+**Approved Date:** {YYYY-MM-DD}
+```
+
+**Integration with ADRs:**
+
+| Document | Purpose |
+|----------|---------|
+| **REARCH-XXX** | Documents the PROCESS (how we transition) |
+| **ADR-XXX** | Documents the DECISION (what we chose and why) |
+
+**Workflow:**
+1. Create `REARCH-XXX` proposal in `.aman-pm/rearchitecture/active/`
+2. Document alternatives and impact analysis
+3. Get human approval
+4. When approved, create `ADR-XXX` documenting the decision
+5. Link REARCH to ADR: `related_adr: ADR-XXX`
+6. Execute implementation plan
+7. Update `learnings.md` with outcomes
+8. Move REARCH to `completed/` when done
+
+**Retrospective Integration:**
+
+Add to sprint retrospective:
+```markdown
+## Roadmap Impact
+
+- Did we learn anything that invalidates architectural assumptions? {yes/no}
+- If yes, create REARCH-XXX proposal
+```
+
 ### Velocity Tracking 🔹 **Core**
 
 Update `.aman-pm/knowledge/velocity.json` at sprint end:
@@ -1298,6 +2085,86 @@ Update `.aman-pm/knowledge/velocity.json` at sprint end:
   }
 }
 ```
+
+### Sprint Retrospective Template 🔸 **Recommended**
+
+Create `.aman-pm/sprints/history/{N}/retrospective.md` at sprint end:
+
+```markdown
+# Sprint {N} Retrospective
+
+**Date:** YYYY-MM-DD
+**Sprint Goal:** {Goal from goal.md}
+
+## Metrics
+
+| Metric | Planned | Actual | Notes |
+|--------|---------|--------|-------|
+| Items committed | 8 | 8 | - |
+| Items completed | - | 7 | 1 carried over |
+| Completion rate | - | 87.5% | - |
+| Hours committed | 26 | 24 | 2 hrs buffer used |
+| Capacity utilization | - | 92% | - |
+
+## Stream Analysis (if using parallel streams)
+
+| Stream | Planned | Completed | Blockers | Notes |
+|--------|---------|-----------|----------|-------|
+| A: {Name} | 3 | 3 | None | On track |
+| B: {Name} | 3 | 2 | {Issue} | 1 carried over |
+| C: {Name} | 2 | 2 | None | Complete |
+
+## Mid-Sprint Changes
+
+| Change | Priority | Hours | Lane | Impact |
+|--------|----------|-------|------|--------|
+| BUG-042 | P0 | 2 | Emergency | Displaced TASK-003 |
+
+**Change Budget:** 5 hrs allocated, 2 hrs used, 3 hrs remaining
+
+## What Went Well
+
+- {Item 1}
+- {Item 2}
+- {Item 3}
+
+## What Didn't Go Well
+
+- {Item 1}
+- {Item 2}
+
+## Action Items for Next Sprint
+
+- [ ] {Action 1 with owner}
+- [ ] {Action 2 with owner}
+
+## Learnings Captured
+
+See `knowledge/learnings.md` for details:
+- Learning 1: {summary}
+- Learning 2: {summary}
+
+## Roadmap Impact
+
+- Did we learn anything that invalidates architectural assumptions? {yes/no}
+- If yes, create REARCH-XXX proposal
+- Roadmap adjustments needed? {yes/no}
+```
+
+**Retrospective Ceremony Flow:**
+
+1. **Review metrics** (5 min) - Pull from `items.yaml` summary
+2. **Stream analysis** (5 min) - Per-stream performance
+3. **Change review** (5 min) - Mid-sprint changes and their impact
+4. **What worked** (10 min) - Successes to continue
+5. **What didn't** (10 min) - Issues to address
+6. **Action items** (5 min) - Concrete next steps with owners
+7. **Learnings** (5 min) - Capture any new learnings
+8. **Roadmap check** (5 min) - Architecture assumptions still valid?
+
+**Velocity Update:**
+
+After retrospective, update `velocity.json` with sprint data and recalculate averages.
 
 ---
 
@@ -1548,6 +2415,110 @@ Focus on establishing habits:
 
 ## Part 10: Best Practices & Anti-Patterns
 
+### Do It Now Philosophy 🔹 **Core**
+
+**Philosophy:** "What you have to do tomorrow, do today; what you have to do today, do now."
+
+Tech debt compounds at 200-400% interest per week. Small deferrals become catastrophes. Use this threshold-based decision tree:
+
+| Effort Estimate | Decision | Rationale |
+|-----------------|----------|-----------|
+| **< 30 minutes** | ✅ DO NOW | Cost of context switching exceeds cost of doing |
+| **30 min - 1.5 hours** | ✅ DO TODAY | Schedule in current session, don't defer |
+| **1.5 - 4 hours** | 📅 SCHEDULE | Next session, create backlog item |
+| **> 4 hours** | ⚠️ DEFER ONLY IF blocked | Requires explicit human approval + DEBT entry |
+
+**Zero-Tolerance Categories (Never Defer):**
+- CI/CD failures
+- Security vulnerabilities
+- Test failures
+- Code formatting/linting
+- Broken builds
+
+**Deferral Conditions (ALL required for legitimate deferral):**
+1. External blocker exists (not just "no time")
+2. Documented in DEBT-XXX entry
+3. Deadline assigned
+4. Human approved deferral
+
+**Metrics to Track:**
+- Tech Debt Age: Target < 1 week average
+- Deferral Rate: Target < 20% of encountered issues
+- CI Stability: Target > 95% green builds
+
+### Knowledge Lifecycle: Create → Curate → Retire 🔸 **Recommended**
+
+**Philosophy:** Change is the only constant. Build for adaptability, not permanence.
+
+| Phase | Focus | Actions |
+|-------|-------|---------|
+| **CREATE** | Capture knowledge | Specs, ADRs, learnings, validation guides |
+| **CURATE** | Maintain value | Monthly health checks, consolidate duplicates, update stale refs |
+| **RETIRE** | Remove rot | Deprecate with grace period, archive, delete |
+
+**Monthly Health Check Ritual:**
+- [ ] Any docs not updated in 60+ days?
+- [ ] Any specs for deferred features?
+- [ ] Any pending decisions unresolved?
+- [ ] Any learnings that should become guides?
+
+**Deprecation Protocol:**
+
+```markdown
+---
+**Status:** ⚠️ DEPRECATED (YYYY-MM-DD)
+**Superseded By:** [New Approach](link)
+**Removal Date:** YYYY-MM-DD (3 months out)
+**Reason:** {Why deprecated}
+---
+```
+
+**Marie Kondo Principles for Documentation:**
+1. Does this spark utility? (If not, archive)
+2. Would I write this again today? (If not, deprecate)
+3. Does someone own this? (If not, assign or archive)
+
+### Search-Fix-Learn Debugging 🔸 **Recommended**
+
+**Philosophy:** Bugs are learning opportunities. Every fix should produce institutional knowledge.
+
+| Phase | Goal | Actions |
+|-------|------|---------|
+| **SEARCH** | Gather all relevant info | Parallel search: codebase, official docs, web, issue trackers. Don't guess—investigate. |
+| **FIX** | Apply incremental fixes | Test one change at a time. Document what didn't work. |
+| **LEARN** | Convert to knowledge | Create RCA if novel. Add to issues database if pattern. Update docs if gap found. |
+
+**RCA Triggers (When to Create):**
+
+| Trigger | Action |
+|---------|--------|
+| CI/CD failure (not simple config) | RCA required |
+| Same error class twice | RCA required (recurring pattern) |
+| Investigation > 30 minutes | Consider RCA |
+| Workaround used | Document in issues database |
+
+**RCA Template:**
+
+```markdown
+# RCA-XXX: {Title}
+
+## Summary
+{What happened, when, impact}
+
+## Root Cause Analysis (5 Whys)
+1. Why? → Because...
+2. Why? → Because...
+(Continue until root cause found)
+
+## Prevention Measures
+- [ ] {Measure 1} - Status: implemented / pending
+- [ ] {Measure 2} - Status: implemented / pending
+
+## Related Items
+- DEBT-XXX (if follow-up needed)
+- ISSUE-XXX (if pattern documented)
+```
+
 ### Best Practices
 
 1. **Front-load context in files**
@@ -1571,9 +2542,10 @@ Focus on establishing habits:
    - Keep state clean
    - Archive done items
 
-6. **Keep CLAUDE.md under 150 lines**
-   - AI instruction-following degrades at 100-250 instructions
-   - Move details to skills
+6. **Keep CLAUDE.md high-signal, not artificially short**
+   - DO NOT remove critical rules to meet arbitrary line limits
+   - Move detailed procedures to skills, keep critical rules in CLAUDE.md
+   - Focus on signal quality, not line count (350 lines is fine if all high-signal)
 
 ### Anti-Patterns
 
@@ -1585,9 +2557,9 @@ Focus on establishing habits:
    - Lost context from previous work
    - Always read index first
 
-3. **Too many rules in CLAUDE.md**
-   - Degraded adherence
-   - Use tiered skills
+3. **Removing rules to shorten CLAUDE.md**
+   - Removes critical guidance to meet arbitrary limits
+   - Keep high-signal content; move procedures to skills
 
 4. **Manual index editing**
    - index.yaml is auto-generated
@@ -1596,6 +2568,210 @@ Focus on establishing habits:
 5. **Stale memory bank**
    - Old learnings clutter context
    - Archive after 4 weeks (can automate in `/aman end`)
+
+6. **Index-as-Source-of-Truth**
+   - **Wrong:** Manually editing `index.yaml` counts and status
+   - **Right:** Edit backlog files, regenerate index via `/aman sync`
+
+7. **Placeholder Validation Guides**
+   - **Wrong:** `TOKEN=<your-token-here>` requiring human interpretation
+   - **Right:** `TOKEN=$(./scripts/get-token.sh)` with acquisition method
+
+8. **Undefined Deferral**
+   - **Wrong:** "We'll fix this later" with no tracking
+   - **Right:** DEBT-XXX entry with priority, effort, and deadline
+
+9. **AI Self-Validation**
+   - **Wrong:** AI marks feature complete after running tests
+   - **Right:** AI pauses at Gate 4, waits for human "F## validated"
+
+10. **Implicit Tool Versions**
+    - **Wrong:** "Use golangci-lint" without version
+    - **Right:** "Use golangci-lint v2.7.2 (pinned in config)"
+
+11. **Learnings Without Prevention**
+    - **Wrong:** "Learned that X causes Y"
+    - **Right:** "Learned X causes Y. Prevention: Add CI rule Z. See RCA-XXX."
+
+12. **Performance as Afterthought**
+    - **Wrong:** "We'll optimize later"
+    - **Right:** Performance budget in spec, validated before completion
+
+### Interface-First Specification 🔸 **Recommended**
+
+**Philosophy:** "Can someone implement this without seeing the current code?"
+
+Design modules as black boxes with clean, documented APIs. Replaceability is a quality metric.
+
+| Principle | Application |
+|-----------|-------------|
+| **Black Box** | Hide implementation, expose API only |
+| **Replaceable** | Module can be rewritten using only interface docs |
+| **Single Responsibility** | One module = one person can own it |
+| **Primitives First** | Build complexity through composition, not complicated base types |
+
+**Verification Questions:**
+1. Can you describe this module's purpose without mentioning implementation?
+2. Could a new developer rewrite this in a week using only the interface docs?
+3. Can you explain the module's purpose in one sentence?
+
+**Interface Documentation Pattern:**
+
+```go
+// Searcher provides search capability over indexed content.
+// Thread-safe for concurrent calls.
+type Searcher interface {
+    // Search returns results matching the query, sorted by relevance.
+    // Returns at most limit results. Returns empty slice if no matches.
+    Search(ctx context.Context, query Query) ([]Result, error)
+}
+```
+
+**Red Flags:**
+- API exposes internal types (leaky abstraction)
+- Module too complex for one person to own
+- Hard-coded dependencies instead of interfaces
+- Changes cascade across multiple modules
+
+### Performance Budgets 🔸 **Recommended**
+
+**Philosophy:** "Performance is a feature, not an afterthought."
+
+Define performance targets upfront in specs, not post-implementation.
+
+| Operation Type | Target | User Perception |
+|----------------|--------|-----------------|
+| Instant feedback | < 100ms | "Instant" |
+| Interactive | < 1s | "Responsive" |
+| Background | < 10s | "Working" |
+| Batch | Document | "Expected" |
+
+**Spec Template Addition:**
+
+```markdown
+## Performance Requirements
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| API Response | < 200ms p95 | Load test with k6 |
+| Page Load | < 3s | Lighthouse audit |
+| Query Time | < 50ms | DB query profiling |
+```
+
+**Performance-as-Feature Rules:**
+1. Define targets in spec, not after implementation
+2. Measure before declaring "done"
+3. Budget includes all overhead (auth, logging, serialization)
+4. Document degradation strategy if budget exceeded
+
+### Graceful Degradation ⚪ **Optional**
+
+**Philosophy:** "A partially working system is better than a completely broken one."
+
+Design systems to degrade gracefully when components fail.
+
+| Level | Capability | User Experience |
+|-------|------------|-----------------|
+| Full | All features operational | Normal operation |
+| Degraded | Core features only | "Some features unavailable" |
+| Minimal | Read-only / static | "Limited functionality" |
+| Offline | Cached data only | "Working offline" |
+
+**Error Message Design:**
+
+```
+❌ BAD: "Error: connection refused"
+
+✅ GOOD:
+⚠ External service unavailable
+
+The payment processor is not responding.
+
+To fix:
+  1. Check if service is running
+  2. Verify network connectivity
+  3. Try again in 30 seconds
+
+Continuing with cached data for now...
+```
+
+**Design Rules:**
+1. Never fail completely if partial operation is possible
+2. Always tell user what's wrong AND how to fix it
+3. Log failures with context for debugging
+4. Provide fallback behavior when external dependencies fail
+
+### Unix Philosophy Verification 🔸 **Recommended**
+
+**Philosophy:** "Simple parts, clean interfaces, composable tools."
+
+Apply these 17 principles from Unix Philosophy to AmanPM artifacts:
+
+| Category | Principles |
+|----------|------------|
+| **Design** | Modularity, Clarity, Composition, Separation, Simplicity |
+| **Build** | Parsimony, Transparency, Robustness, Representation, Least Surprise |
+| **Run** | Silence, Repair, Economy, Generation, Optimization, Diversity, Extensibility |
+
+**Verification Checklist (Before Major Deliverables):**
+
+- [ ] **Modularity:** Does each component have a single responsibility?
+- [ ] **Clarity:** Can a new developer understand this in <30 min?
+- [ ] **Composition:** Can output be piped/chained to other tools?
+- [ ] **Separation:** Are all tunable values in config, not code?
+- [ ] **Simplicity:** Did I add only necessary complexity?
+- [ ] **Transparency:** Can the decision process be explained?
+- [ ] **Robustness:** What happens on failure? Is it graceful?
+- [ ] **Replaceability:** Can this be swapped without changing callers?
+
+**Quick Reference:**
+
+```
+┌─────────────────────────────────────────────────────┐
+│              UNIX PHILOSOPHY QUICK REF              │
+├─────────────────────────────────────────────────────┤
+│ DESIGN: Modular, Clear, Composable, Separate       │
+│ BUILD:  Parsimony, Transparent, Robust, Data>Logic │
+│ RUN:    Silent, Repair fast, Economical, Extensible│
+├─────────────────────────────────────────────────────┤
+│ KEY QUESTION: "Can this be understood and replaced │
+│               by someone who's never seen it?"     │
+└─────────────────────────────────────────────────────┘
+```
+
+### The 90/9/1 Rule ⚪ **Optional**
+
+**Philosophy:** "Optimize for the common case, not edge cases."
+
+Design for the 90% case first, then handle the remaining 10%.
+
+| Segment | Need | Design Focus |
+|---------|------|--------------|
+| **90%** | No configuration | Works out of the box |
+| **9%** | Minimal tweaks | Simple config file |
+| **1%** | Full customization | Extension points |
+
+**Application to AmanPM:**
+
+```yaml
+# For the 90%: No config file needed. Just `/aman start`.
+
+# For the 9%: Simple .aman-pm/config.yaml tweaks
+sprints:
+  default_length: 7  # Changed from 14
+
+# For the 1%: Custom templates, hooks, integrations
+templates:
+  feature: "custom-feature.yaml"
+hooks:
+  session_start: "scripts/my-startup.sh"
+```
+
+**Design Rules:**
+1. Default behavior should serve 90% of users
+2. Configuration should only be needed for deviations
+3. Power user features should not complicate the basic experience
+4. Document what most users need, not what's possible
 
 ### Common Pitfalls
 
@@ -2053,10 +3229,14 @@ mkdir -p .aman-pm/backlog/bugs/{active,resolved}
 mkdir -p .aman-pm/backlog/spikes/{active,done}
 mkdir -p .aman-pm/backlog/debt/{active,resolved}
 
-# 2. Create skill structure
+# 2. Create v3.0 evolved directories
+mkdir -p .aman-pm/rearchitecture/{active,completed}
+mkdir -p .aman-pm/memory-bank
+
+# 3. Create skill structure
 mkdir -p .claude/skills/aman/{commands,shared}
 
-# 3. Initialize knowledge files
+# 4. Initialize knowledge files (cold storage)
 cat > .aman-pm/knowledge/learnings.md << 'EOF'
 # Project Learnings
 
@@ -2064,11 +3244,28 @@ cat > .aman-pm/knowledge/learnings.md << 'EOF'
 
 EOF
 
-# 4. Create config.yaml (see Part 3)
+# 5. Initialize memory-bank (hot memory)
+cat > .aman-pm/memory-bank/architectural-constraints.md << 'EOF'
+# Architectural Constraints (Always Active)
 
-# 5. Create skill files (see templates above)
+> **Purpose:** Critical constraints that must be respected in ALL implementations.
+> This file is loaded at every `/aman start`.
 
-# 6. Update CLAUDE.md with PM section
+## Core Constraints
+
+<!-- Add your project's architectural constraints here -->
+<!-- Example: -->
+<!-- - All authentication flows through {Identity Provider} -->
+<!-- - All permission checks go through {Authorization Service} -->
+<!-- - API endpoints must use {specific middleware pattern} -->
+
+EOF
+
+# 6. Create config.yaml (see Part 3)
+
+# 7. Create skill files (see templates above)
+
+# 8. Update CLAUDE.md with PM section
 ```
 
 ### Implementation Checklist for New Projects
@@ -2191,7 +3388,7 @@ Symptoms:
 
 Fixes:
 1. Run /clear between major tasks
-2. Keep CLAUDE.md under 150 lines
+2. Keep CLAUDE.md high-signal (move procedures to skills, keep rules)
 3. Archive old learnings (4+ weeks)
 4. Use /aman status for quick checks (not full /aman start)
 ```
@@ -2347,16 +3544,17 @@ These walkthroughs help you understand what happens when things go wrong and how
 ### Essential Commands
 
 ```
-/aman start        Begin session
+/aman start        Begin session (surfaces memory + constraints)
 /aman              Check status
-/aman end          End session
+/aman end          End session (capture learnings + handoff)
 
 /aman add feature "Title"   Create feature
 /aman done FEAT-001         Mark complete
 
-/aman groom                 Analyze backlog
-/aman sprint-start "Goal"   Start sprint
-/aman sprint-end            End sprint
+/aman groom                 Analyze backlog (DoR + WSJF ranking)
+/aman sprint-start "Goal"   Start sprint (with optional streams)
+/aman sprint-end            End sprint (retrospective + velocity)
+/aman rearch                Create rearchitecture proposal
 ```
 
 ### Key Files
@@ -2365,9 +3563,11 @@ These walkthroughs help you understand what happens when things go wrong and how
 |------|---------|
 | `.aman-pm/index.yaml` | State + memory (auto-generated) |
 | `.aman-pm/config.yaml` | Configuration |
-| `.aman-pm/knowledge/learnings.md` | Persistent learnings |
-| `.aman-pm/sprints/active/N/` | Current sprint |
+| `.aman-pm/memory-bank/` | Hot memory (constraints, active decisions) |
+| `.aman-pm/knowledge/learnings.md` | Cold storage (persistent learnings) |
+| `.aman-pm/sprints/active/N/` | Current sprint (with streams) |
 | `.aman-pm/backlog/` | All work items |
+| `.aman-pm/rearchitecture/` | Architecture change proposals |
 
 ### Daily Workflow
 
@@ -2413,6 +3613,35 @@ backlog → ready → in_progress → review → done
 - [ ] Learning summarization (4+ weeks) ⚪
 - [ ] Sprint-end orphan handling ⚪
 - [ ] AC auto-generation ⚪
+
+### v3.0 Evolved Features
+
+- [ ] `memory-bank/` directory with architectural constraints 🔹
+- [ ] `rearchitecture/` directory structure 🔸
+- [ ] DoR checklist applied to grooming 🔹
+- [ ] DoD checklist applied to sprint-end 🔹
+- [ ] WSJF prioritization in `/aman groom` 🔸
+- [ ] Parallel streams in sprint items 🔸
+- [ ] Mid-sprint change budget tracking 🔹
+- [ ] Rearchitecture proposal workflow 🔸
+
+### v4.0 Production-Hardened Features
+
+- [ ] Premium Engineering mindset documented in CLAUDE.md 🔹
+- [ ] Two-Layer Knowledge Architecture (Constitution + Discovery) 🔹
+- [ ] SSOT Hierarchy with conflict resolution rules 🔹
+- [ ] Engineering Workflow Contract (5-gate quality system) 🔹
+- [ ] Do It Now Philosophy with threshold-based decisions 🔹
+- [ ] Human Validation Gate (AI pauses at Gate 4) 🔹
+- [ ] Search-Fix-Learn debugging workflow with RCA triggers 🔸
+- [ ] Knowledge Lifecycle: Create → Curate → Retire 🔸
+- [ ] Interface-First Specification principles 🔸
+- [ ] Performance Budgets in feature specs 🔸
+- [ ] Unix Philosophy verification checklist 🔸
+- [ ] Graceful Degradation patterns ⚪
+- [ ] 90/9/1 Rule applied to configuration ⚪
+- [ ] Tech Debt tracking (DEBT-XXX entries) 🔹
+- [ ] RCA/Postmortem infrastructure for learning capture 🔸
 
 ### Integration Checklist
 
@@ -2469,16 +3698,29 @@ backlog → ready → in_progress → review → done
 
 ## Summary
 
-AmanPM solves the AI memory problem through structured file-based persistence. The key principles:
+AmanPM solves the AI memory problem through structured file-based persistence while embedding production-proven engineering discipline. The key principles:
 
-1. **"If AI can't remember it, write it to a file"**
-2. **Human Director, AI Executor**
-3. **Three-layer architecture** (Strategic → Operational → Auto-generated)
-4. **Two-tier memory loading** (Always-load + On-demand)
-5. **Session discipline** (explicit start and end rituals)
-6. **Token budget awareness** (target <2500 tokens cold-start)
-7. **Cross-model portability** (works with Claude, GPT-5, Gemini)
-8. **Learnings persist forever** (captured, summarized, archived)
+**Foundation:**
+1. **"If AI can't remember it, write it to a file"** - Structured persistence
+2. **Human Director, AI Executor** - Clear role separation
+3. **Premium Engineering Mindset** - "We don't ship 'good enough'. We ship excellent."
+
+**Architecture:**
+4. **Two-Layer Knowledge Architecture** - Constitution (CLAUDE.md) + Discovery (skills/guides)
+5. **Three-layer file architecture** - Strategic → Operational → Auto-generated
+6. **Three-tier memory** - Hot memory-bank → Cold knowledge → Archive
+7. **SSOT Hierarchy** - Explicit conflict resolution rules
+
+**Quality:**
+8. **Five-Gate Quality System** - Spec → TDD → CI Parity → Validation Guide → Human Validation
+9. **Do It Now Philosophy** - Threshold-based deferral (< 30 min = DO NOW)
+10. **Search-Fix-Learn Debugging** - Every bug produces institutional knowledge
+
+**Process:**
+11. **Session discipline** - Explicit start and end rituals
+12. **Sprint-based agile** - Grooming, planning, mid-sprint changes, retrospectives
+13. **Quality gates** - Definition of Ready + Definition of Done
+14. **Cross-model portability** - Works with Claude, GPT-5, Gemini
 
 Start with session rituals, add backlog tracking, then sprints. Full adoption takes ~4 weeks.
 
@@ -2494,7 +3736,44 @@ Start with session rituals, add backlog tracking, then sprints. Full adoption ta
 
 ---
 
-*Version 2.1.1 | Consistency & accuracy fixes | 2026-02-01*
+*Version 4.0.0 | Production-Hardened AmanPM with Engineering Discipline | 2026-02-02*
+
+**Changelog v4.0.0:**
+- **NEW: Premium Engineering Mindset** (Part 1) - "We don't ship 'good enough'. We ship excellent."
+- **NEW: Two-Layer Knowledge Architecture** (Part 1) - Constitution (CLAUDE.md) + Discovery (skills/guides) separation
+- **NEW: SSOT Hierarchy & Conflict Resolution** (Part 1) - Explicit rules for when files disagree
+- **NEW: Engineering Workflow Contract** (Part 4) - Five-Gate Quality System with human validation gate
+- **NEW: Do It Now Philosophy** (Part 10) - Threshold-based deferral decisions (30min/1.5hr/4hr)
+- **NEW: Knowledge Lifecycle** (Part 10) - Create → Curate → Retire with monthly health checks
+- **NEW: Search-Fix-Learn Debugging** (Part 10) - Systematic debugging with RCA triggers
+- **NEW: Interface-First Specification** (Part 10) - Replaceability as a quality metric
+- **NEW: Performance Budgets** (Part 10) - Performance targets defined in specs, not post-implementation
+- **NEW: Graceful Degradation** (Part 10) - Partial operation better than complete failure
+- **NEW: Unix Philosophy Verification** (Part 10) - 17-rule checklist for architecture decisions
+- **NEW: The 90/9/1 Rule** (Part 10) - Design for common case, not edge cases
+- **FIXED: CLAUDE.md length guidance** - Changed from "150 lines" to "high-signal, not artificially short"
+- **EXPANDED: Anti-Patterns** - From 5 to 12 items including placeholders, implicit versions, AI self-validation
+- **ENHANCED: Summary** - Now reflects all 14 key principles organized by category
+- **ENHANCED: Implementation Checklist** (Appendix B) - Added v4.0 Production-Hardened Features
+- **ENHANCED: Table of Contents** - Added all new section references with anchor links
+- Synthesized recommendations from Claude, Gemini, and GPT-4 analyses
+- Incorporated patterns from AmanMCP philosophy documents
+
+**Changelog v3.0.0:**
+- **NEW: Definition of Ready (DoR)** (Part 4) - Quality gate checklist before items enter sprint
+- **NEW: Definition of Done (DoD)** (Part 4) - Completion criteria for work items
+- **NEW: WSJF Prioritization** (Part 5) - Weighted Shortest Job First prioritization method
+- **NEW: Three-Tier Memory Architecture** (Part 6) - Hot (memory-bank/) vs Cold (knowledge/) distinction
+- **NEW: Memory Bank** (Part 6) - Always-loaded architectural constraints and active decisions
+- **NEW: Parallel Development Streams** (Part 7) - Multi-workstream sprint management
+- **NEW: Mid-Sprint Change Management** (Part 7) - Change budget protocol with intake/emergency lanes
+- **NEW: Rearchitecture Workflow** (Part 7) - REARCH-XXX proposal process for architectural pivots
+- **ENHANCED: Sprint Retrospective Template** (Part 7) - Stream analysis and capacity utilization metrics
+- **ENHANCED: `/aman groom`** (Part 5) - Now includes DoR validation and WSJF ranking
+- **ENHANCED: Bootstrap Script** (Part 11) - Added rearchitecture/ and memory-bank/ directories
+- **ENHANCED: Implementation Checklist** (Appendix B) - Added new v3.0 components
+- Updated Table of Contents with new section references
+- Updated Summary to reflect three-tier memory architecture
 
 **Changelog v2.1.1:**
 - Added **Primary Workflow Model** section (Part 1) - clarifies Claude executes, other models review
