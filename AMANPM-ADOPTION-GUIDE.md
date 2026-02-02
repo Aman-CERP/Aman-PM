@@ -45,6 +45,10 @@ Throughout this guide, features are marked with their adoption priority:
 9. [Progressive Adoption](#part-9-progressive-adoption)
 10. [Best Practices & Anti-Patterns](#part-10-best-practices--anti-patterns)
     - [Do It Now Philosophy](#do-it-now-philosophy--core)
+    - [The Checklist Manifesto](#the-checklist-manifesto--core)
+    - [Black-Box Design](#black-box-design-eskil-steenberg--recommended)
+    - [Unix Philosophy](#unix-philosophy-17-rules--recommended)
+    - [AI-Native Patterns](#ai-native-patterns--recommended)
     - [Knowledge Lifecycle](#knowledge-lifecycle-create--curate--retire--recommended)
     - [Search-Fix-Learn Debugging](#search-fix-learn-debugging--recommended)
     - [Interface-First Specification](#interface-first-specification--recommended)
@@ -344,11 +348,17 @@ Create this structure in your project:
 │   ├── spike.md
 │   └── debt.md
 │
-├── product/                 # Feature specifications 
+├── checklists/                 # Layer 1 killer items (5-9 items each)
+│   ├── index.md                # Registry with triggers & taxonomy
+│   ├── CL-IMPL-DC-PreCommit.md     # Before git commit (7 items)
+│   ├── CL-IMPL-DC-FeatureComplete.md  # Feature complete gate (9 items)
+│   └── CL-*.md                 # Domain-specific checklists
+│
+├── product/                 # Feature specifications
 │   └── F##-*.md
 │
-├── validation/              # Test data and results 
-└── guides/                  # PM system documentation
+├── validation/              # Test data and results
+└── guides/                  # PM system documentation (incl. Layer 2 quality-checklist.md)
 ```
 
 ### Claude Code Skill System (Required for Automation) 🔹 **Core**
@@ -1124,6 +1134,9 @@ For high-quality projects, implement a sequential quality gate system:
 | `/aman sprint-end` | 🔹 **Core** | Closes sprint with ceremony |
 | `/aman report` | 🔸 **Recommended** | Sprint summary |
 | `/aman release` | 🔸 **Recommended** | Version + changelog |
+| `/aman checklist` | 🔹 **Core** | List/run checklists at pause points |
+| `/aman pre-commit` | 🔹 **Core** | Pre-commit killer items (7 items, 60 sec) |
+| `/aman feature-gate` | 🔹 **Core** | Feature complete killer items (9 items, 90 sec) |
 
 ### SKILL.md Template
 
@@ -1163,6 +1176,9 @@ description: |
 /aman sprint-start → create sprint
 /aman sprint-end   → close sprint
 /aman release      → create release
+/aman checklist    → list/run checklists
+/aman pre-commit   → pre-commit killer items (7 items)
+/aman feature-gate → feature complete killer items (9 items)
 ```
 
 ## Command Reference
@@ -1181,6 +1197,9 @@ description: |
 | `/aman groom` | — | Backlog analysis |
 | `/aman report` | — | Sprint report |
 | `/aman release` | — | Create release |
+| `/aman checklist` | `[id]` | List or run checklist |
+| `/aman pre-commit` | — | Pre-commit killer items |
+| `/aman feature-gate` | — | Feature complete gate |
 
 ## Daily Workflow
 
@@ -2446,6 +2465,432 @@ Tech debt compounds at 200-400% interest per week. Small deferrals become catast
 - Deferral Rate: Target < 20% of encountered issues
 - CI Stability: Target > 95% green builds
 
+### The Checklist Manifesto 🔹 **Core**
+
+**Philosophy:** "Checklists catch what expertise misses." — Atul Gawande
+
+Based on the book "The Checklist Manifesto" which dramatically reduced surgical deaths by implementing simple verification checklists. The same principles apply to software development: even experts forget critical steps under pressure.
+
+#### Two Types of Errors
+
+| Error Type | Definition | Software Examples |
+|------------|------------|-------------------|
+| **Ignorance** | Don't know how | New technology, unfamiliar patterns |
+| **Ineptitude** | Know but don't apply | Forgot `make ci-check`, skipped validation guide |
+
+**Key Insight:** Most software failures are **ineptitude-class**—we KNOW to run CI checks but forget. Checklists are the solution.
+
+#### Two Checklist Types
+
+| Type | When to Use | Execution Style |
+|------|-------------|-----------------|
+| **READ-DO** | Sequential/critical tasks, emergencies | Read step → Do it → Next step |
+| **DO-CONFIRM** | Routine tasks, experienced teams | Do from memory → Pause → Confirm |
+
+**Naming Convention:** `CL-{DOMAIN}-{TYPE}-{Name}.md`
+- Domains: IMPL (Implementation), SEC (Security), DBM (Database Migration), OPS (Operations), REL (Release)
+- Types: DC (DO-CONFIRM), RD (READ-DO)
+- Example: `CL-IMPL-DC-PreCommit.md`
+
+#### The 5-9 Item Rule
+
+- **Working memory limit:** Human brain holds 4-7 items max
+- **60-90 seconds:** Longer checklists become distractions and get skipped
+- **"Killer items" only:** Include ONLY steps most dangerous to skip
+
+**Anti-Pattern:** 50+ item checklists → Cognitive overload → Checklist abandonment
+
+#### Two-Layer Checklist System
+
+| Layer | Purpose | Items | Time | Trigger |
+|-------|---------|-------|------|---------|
+| **Layer 1: Killer Items** | Quick verification gate | 5-9 | 60-90 sec | Every commit, feature gate |
+| **Layer 2: Comprehensive** | Thorough review | 50+ | 15-30 min | Human validation only |
+
+**Coexistence Model:**
+
+```
+Workflow Touch Point          Checklist(s) Triggered
+─────────────────────────────────────────────────────
+Before git commit     →  CL-IMPL-DC-PreCommit (Layer 1)
+Feature "complete"    →  CL-IMPL-DC-FeatureComplete (Layer 1)
+Human validation      →  quality-checklist.md (Layer 2)
+```
+
+**Principle:** Layer 1 runs EVERY time (mandatory). Layer 2 runs at VALIDATION boundaries (human).
+
+#### Auto-Trigger Pause Points
+
+| Pause Point | Checklist | Trigger Condition |
+|-------------|-----------|-------------------|
+| Pre-Commit | CL-IMPL-DC-PreCommit | Before `git commit` |
+| Feature Complete | CL-IMPL-DC-FeatureComplete | AI claims "feature complete" |
+| Session End | CL-REL-DC-SessionEnd | During `/aman end` |
+| Security Code | CL-SEC-DC-SecurityReview | After auth/middleware changes |
+| Migration | CL-DBM-RD-MigrationValidation | Migration files created/modified |
+
+#### Essential Checklists (Starter Kit)
+
+**Pre-Commit Killer Items (7 items, 60 sec):**
+
+```markdown
+## CL-IMPL-DC-PreCommit
+**Type:** DO-CONFIRM | **Trigger:** Before `git commit` | **Time:** 60 sec
+
+- [ ] `make ci-check` exit code 0
+- [ ] No `<your-token-here>` placeholders in code
+- [ ] No debug code (fmt.Println, console.log)
+- [ ] No commented-out code blocks
+- [ ] No secrets in committed files
+- [ ] Changelog entry in unreleased.md (if meaningful)
+- [ ] All TODO comments have DEBT-XXX reference
+```
+
+**Feature Complete Killer Items (9 items, 90 sec):**
+
+```markdown
+## CL-IMPL-DC-FeatureComplete
+**Type:** DO-CONFIRM | **Trigger:** AI claims "feature complete" | **Time:** 90 sec
+
+- [ ] `make ci-check` exit code 0 (not "I'll fix later")
+- [ ] Validation guide exists and is self-contained
+- [ ] No placeholders in validation guide
+- [ ] All ACs implemented OR deferred with DEBT-XXX
+- [ ] Regression tests created
+- [ ] Changelog entry added to unreleased.md
+- [ ] Future scope captured in future-enhancements.md
+- [ ] Backlog item updated (if from BL-*)
+- [ ] Git status shows only intended files
+```
+
+#### Checklist Item Writing Rules
+
+| Rule | Good Example | Bad Example |
+|------|--------------|-------------|
+| Actionable | `make ci-check` exit code 0 | CI should pass |
+| Verifiable | No `<token>` placeholders | Guide is complete |
+| Single action | Run `govulncheck` | Run scan and fix issues |
+| Binary | Yes/No checkable | Somewhat complete |
+| Kill-worthy | Security vulnerability | Style preference |
+
+#### /aman Checklist Commands
+
+```
+/aman checklist              # List available checklists
+/aman checklist <id>         # Run specific checklist
+/aman checklist --suggest    # AI suggests based on context
+/aman pre-commit             # Alias: CL-IMPL-DC-PreCommit
+/aman feature-gate           # Alias: CL-IMPL-DC-FeatureComplete
+```
+
+#### Checklist Runner Skill Integration
+
+Create `.claude/skills/checklist-runner/SKILL.md`:
+
+```markdown
+# Checklist Runner Skill
+
+## Auto-Load Triggers
+- Before `git commit` → Run CL-IMPL-DC-PreCommit
+- "Feature complete" → Run CL-IMPL-DC-FeatureComplete
+- `/aman end` → Run CL-REL-DC-SessionEnd
+
+## Execution Protocol
+1. Load checklist from `.aman-pm/checklists/`
+2. For each item:
+   - If automatable: Run and report PASS/FAIL
+   - If manual: State check clearly
+3. Report: X/Y items passed
+4. If ANY fail: STOP and block proceeding
+
+## Example Output
+=== CL-IMPL-DC-PreCommit (7 items) ===
+[1/7] make ci-check exit code 0... ✅ PASS
+[2/7] No placeholders in code... ✅ PASS
+...
+[6/7] Changelog entry exists... ❌ FAIL
+RESULT: 6/7 PASS, 1 FAIL
+⛔ STOP: Cannot commit until all items pass.
+```
+
+#### Makefile Integration
+
+```makefile
+.PHONY: checklist cl-precommit cl-feature
+
+checklist:
+	@echo "Available: cl-precommit, cl-feature, cl-security, cl-migration"
+
+cl-precommit:
+	@cat .aman-pm/checklists/CL-IMPL-DC-PreCommit.md
+
+cl-feature:
+	@cat .aman-pm/checklists/CL-IMPL-DC-FeatureComplete.md
+```
+
+#### Success Metrics
+
+| Metric | Before | After Target |
+|--------|--------|--------------|
+| CI failures post-commit | ~30% | <5% |
+| Validation guide placeholders | Frequent | Zero |
+| Feature rework rate | 1-2/feature | <0.5 |
+| Checklist completion time | N/A | <90 sec |
+
+#### Monthly Review Process
+
+1. Which items failed most often? (Remove if never fails)
+2. What RCAs should checklists have caught? (Add items)
+3. Keep to 5-9 items (remove lowest-value to add new)
+
+**Reference:** [The Checklist Manifesto by Atul Gawande](https://atulgawande.com/book/the-checklist-manifesto/)
+
+### Black-Box Design (Eskil Steenberg) 🔸 **Recommended**
+
+**Philosophy:** "Every module should be a black box with a clean, documented API." — Eskil Steenberg
+
+Based on principles from "Architecting Large Software Projects" for building systems that last decades.
+
+#### The 4 Core Principles
+
+| Principle | Meaning | Test |
+|-----------|---------|------|
+| **Black Box Interfaces** | Hide implementation, expose API only | Can you describe this module without mentioning implementation? |
+| **Replaceable Components** | Rewritable from interface alone | Could a new dev rewrite this in a week using only the interface docs? |
+| **Single Responsibility** | One module = one person can own it | Can you explain this module's purpose in one sentence? |
+| **Primitive-First Design** | Build complexity through composition | Can you list 3-5 core types that flow through this module? |
+
+#### Interface-First Pattern
+
+```go
+// BAD: Leaks implementation
+type AuthService struct {
+    zitadelClient *zitadel.Client  // Exposes vendor
+    fgaClient     *openfga.Client  // Exposes vendor
+}
+
+// GOOD: Black box
+type Authenticator interface {
+    Authenticate(ctx context.Context, token string) (*Identity, error)
+}
+
+type Authorizer interface {
+    Check(ctx context.Context, user, relation, object string) (bool, error)
+}
+
+// Multiple implementations possible:
+// - ZitadelAuthenticator: Production
+// - MockAuthenticator: Testing
+// - LocalAuthenticator: Development
+```
+
+#### Module Boundary Verification
+
+Before marking architecture work complete:
+
+- [ ] **Primitives clear?** Can you list the core types that flow through?
+- [ ] **Black box boundary?** Can you draw a box around this module?
+- [ ] **Replaceable?** Could someone implement this without seeing current code?
+- [ ] **Human-readable?** Will this be maintainable in 5 years?
+- [ ] **Single responsibility?** Does each module have one obvious job?
+
+#### Red Flags to Avoid
+
+| Red Flag | Problem | Fix |
+|----------|---------|-----|
+| API exposes internal types | Leaky abstraction | Define interface types |
+| Module too complex for one person | Violation of single responsibility | Split into focused modules |
+| Hard-coded dependencies | Tight coupling | Use interfaces + injection |
+| Interface requires internal knowledge | Not a true black box | Simplify interface |
+| Changes cascade across modules | Poor boundaries | Strengthen interface contracts |
+
+**Reference:** [Eskil Steenberg - Architecting Large Software Projects](https://www.youtube.com/watch?v=_xLgr6Ng4qQ)
+
+### Unix Philosophy (17 Rules) 🔸 **Recommended**
+
+**Philosophy:** "Write programs that do one thing and do it well." — Doug McIlroy
+
+The foundational principles for building modular, maintainable software.
+
+#### Core Rules Summary
+
+**Design Principles:**
+
+| # | Rule | Meaning |
+|---|------|---------|
+| 1 | **Modularity** | Simple parts, clean interfaces |
+| 2 | **Clarity** | Clear > clever |
+| 3 | **Composition** | Programs connect to programs |
+| 4 | **Separation** | Policy ≠ mechanism |
+| 5 | **Simplicity** | Add complexity only when necessary |
+
+**Quality Principles:**
+
+| # | Rule | Meaning |
+|---|------|---------|
+| 6 | **Parsimony** | Write small programs |
+| 7 | **Transparency** | Visible for debugging |
+| 8 | **Robustness** | Child of transparency + simplicity |
+| 9 | **Representation** | Data > logic |
+| 10 | **Least Surprise** | Do the expected thing |
+
+**Operational Principles:**
+
+| # | Rule | Meaning |
+|---|------|---------|
+| 11 | **Silence** | Say nothing unless surprising |
+| 12 | **Repair** | Fail noisily, fail fast |
+| 13 | **Economy** | Developer time > machine time |
+| 14 | **Generation** | Write programs that write programs |
+| 15 | **Optimization** | Prototype first, polish later |
+| 16 | **Diversity** | No "one true way" |
+| 17 | **Extensibility** | Design for future |
+
+#### Implementation Patterns
+
+**Rule of Silence:**
+```go
+// Only show progress if operation will take >5s
+if estimatedDuration > 5*time.Second {
+    showProgressBar()
+}
+```
+
+**Rule of Composition:**
+```bash
+# Enable piping and scripting
+myapp list --json | jq '.items[].id'
+```
+
+**Rule of Representation:**
+```yaml
+# config.yaml - Data, not code
+authorization:
+  default_role: "viewer"
+  admin_bypass: true
+```
+
+**Rule of Repair:**
+```go
+// Fail fast with clear message
+if err := req.Validate(); err != nil {
+    return fmt.Errorf("invalid request: %w", err)
+}
+```
+
+#### Verification Checklist
+
+Before marking architecture work complete:
+
+- [ ] **Modularity:** Does each module have a single responsibility?
+- [ ] **Clarity:** Can a new developer understand this in <30 min?
+- [ ] **Composition:** Can output be piped to other tools?
+- [ ] **Separation:** Are all tunable values in config?
+- [ ] **Simplicity:** Did I add only necessary complexity?
+- [ ] **Transparency:** Can the decision process be explained?
+- [ ] **Robustness:** What happens on failure? Is it graceful?
+
+**Reference:** [The Art of Unix Programming](http://www.catb.org/~esr/writings/taoup/html/) - Eric S. Raymond
+
+### AI-Native Patterns 🔸 **Recommended**
+
+**Philosophy:** "If AI can't remember it, write it to a file."
+
+Patterns for working effectively with LLM coding assistants across session boundaries.
+
+#### The Curse of Instructions
+
+Research shows LLM instruction-following degrades non-linearly:
+
+| Instructions | Accuracy | Notes |
+|--------------|----------|-------|
+| 50 | ~95% | Safe zone |
+| 100-150 | ~85% | Threshold for reasoning models |
+| 250 | ~70% | Degradation accelerates |
+| 500 | ~68% | Even best models struggle |
+
+**Solution:** Tiered guideline loading instead of monolithic instruction files.
+
+#### Tiered Guideline System
+
+| Tier | What | Token Budget | When Loaded |
+|------|------|--------------|-------------|
+| **Tier 0** | CLAUDE.md core rules | ~500 tokens | Always |
+| **Tier 1** | Task-matched skills | ~500 each | When trigger matches |
+| **Tier 2** | Memory bank, guides | On-demand | When referenced |
+| **Tier 3** | Historical archive | Never auto | Explicit queries only |
+
+**Key Insight:** Keep CLAUDE.md small (~500 tokens). Move detailed patterns to skills.
+
+#### Memory Bank Structure
+
+```
+.aman-pm/
+├── context.md                # Current state (AI reads, both update)
+├── memory-bank/              # Hot memory (always loaded)
+│   ├── architectural-constraints.md
+│   ├── active-decisions.md
+│   └── session-context.md
+├── knowledge/                # Warm memory (on-demand)
+│   ├── learnings.md
+│   └── decisions.md
+└── sessions/archive/         # Cold memory (historical)
+```
+
+#### Session Workflow Pattern
+
+```
+/aman start
+    ├── Load Tier 0 (CLAUDE.md)
+    ├── Read context.md
+    ├── Semantic match: sprint items → relevant skills
+    ├── Surface recent learnings
+    └── Show last session recommendations
+         ↓
+[Work with task-matched skills]
+         ↓
+/aman end
+    ├── Run session-end checklist
+    ├── Capture learnings
+    ├── Update memory bank
+    └── Generate handoff document
+```
+
+#### Flashbulb Memory (Critical Insights)
+
+Some learnings are too important to wait for session end. Capture immediately when:
+
+**Trigger Phrases:**
+- "Don't ever do that again"
+- "This was a mistake"
+- "Remember this for next time"
+- "Never do X" / "Always do Y"
+
+**Action:** Write to `learnings.md` immediately, don't wait for `/aman end`.
+
+#### Anti-Patterns to Avoid
+
+| Anti-Pattern | Problem | Fix |
+|--------------|---------|-----|
+| Writing TODOs in chat | Vanishes next session | Write to backlog file |
+| Skipping `/aman start` | Lost context | Make it muscle memory |
+| Too many rules in CLAUDE.md | Degraded adherence | Move to skills |
+| Stale memory bank | Wrong context | Auto-update via /aman |
+| Skipping session end | Lost learnings | Always run `/aman end` |
+
+#### Best Practices
+
+1. **Front-load context** - Put important info at start of files
+2. **Use pointers, not copies** - Reference files, don't duplicate
+3. **Keep token budgets** - <4000 tokens always-loaded
+4. **Progressive disclosure** - Tier 1 always, Tier 2 on-demand
+5. **Machine state in YAML** - Human summaries in Markdown
+6. **Capture learnings immediately** - Don't wait for session end
+
+**Key Question:** *"Will the next session have this context automatically?"*
+
+**Reference:** [Agentic Coding Handbook - Memory Bank](https://tweag.github.io/agentic-coding-handbook/WORKFLOW_MEMORY_BANK/)
+
 ### Knowledge Lifecycle: Create → Curate → Retire 🔸 **Recommended**
 
 **Philosophy:** Change is the only constant. Build for adaptability, not permanence.
@@ -2840,6 +3285,9 @@ description: |
 /aman sprint-start → create sprint
 /aman sprint-end   → close sprint
 /aman release      → create release
+/aman checklist    → list/run checklists
+/aman pre-commit   → pre-commit killer items (7 items)
+/aman feature-gate → feature complete killer items (9 items)
 ```
 
 ## Dispatch Logic
@@ -2858,6 +3306,7 @@ When user invokes `/aman <subcommand>`:
 | `.aman-pm/backlog/` | Work items |
 | `.aman-pm/sprints/active/N/` | Current sprint |
 | `.aman-pm/knowledge/learnings.md` | Persistent learnings |
+| `.aman-pm/checklists/` | Layer 1 killer items checklists |
 ````
 
 #### Session Start: commands/start.md
@@ -3268,6 +3717,124 @@ EOF
 # 8. Update CLAUDE.md with PM section
 ```
 
+### Philosophy Skills (Optional but Recommended)
+
+Create these skills for architecture and design guidance:
+
+#### Black-Box Design Skill
+
+Create `.claude/skills/black-box-design/SKILL.md`:
+
+````markdown
+---
+name: black-box-design
+description: |
+  Eskil Steenberg's principles for building large-scale systems.
+  Load when doing module extraction, interface definition, or refactoring.
+tags: [architecture, refactoring, interfaces]
+---
+
+# Black Box Design Skill
+
+## Core Principles
+
+1. **Black Box Interfaces** - Hide implementation, expose API only
+2. **Replaceable Components** - Rewritable from interface alone
+3. **Single Responsibility** - One module = one person can own it
+4. **Primitive-First Design** - Build complexity through composition
+
+## Verification Questions
+
+Before marking module work complete:
+
+- [ ] Can you describe this module without mentioning implementation?
+- [ ] Could a new dev rewrite this using only the interface docs?
+- [ ] Can you explain this module's purpose in one sentence?
+- [ ] Can you list 3-5 core types that flow through?
+
+## Red Flags
+
+| Red Flag | Fix |
+|----------|-----|
+| API exposes internal types | Define interface types |
+| Module too complex | Split into focused modules |
+| Hard-coded dependencies | Use interfaces + injection |
+````
+
+#### Unix Philosophy Skill
+
+Create `.claude/skills/unix-philosophy/SKILL.md`:
+
+````markdown
+---
+name: unix-philosophy
+description: |
+  The 17 rules of Unix Philosophy for software architecture.
+  Load when doing architecture refactoring, CLI improvements, or interface design.
+tags: [architecture, cli, design]
+---
+
+# Unix Philosophy Skill
+
+## The 17 Rules (Summary)
+
+**Design:** Modularity, Clarity, Composition, Separation, Simplicity
+**Quality:** Parsimony, Transparency, Robustness, Representation, Least Surprise
+**Operations:** Silence, Repair, Economy, Generation, Optimization, Diversity, Extensibility
+
+## Verification Checklist
+
+- [ ] Does each module have a single responsibility?
+- [ ] Can a new developer understand this in <30 min?
+- [ ] Can output be piped to other tools?
+- [ ] Are all tunable values in config?
+- [ ] Did I add only necessary complexity?
+````
+
+#### AI-Native Patterns Skill
+
+Create `.claude/skills/ai-native-patterns/SKILL.md`:
+
+````markdown
+---
+name: ai-native-patterns
+description: |
+  AI-native development patterns for LLM coding assistants.
+  Load when doing PM work, memory improvements, or session workflow.
+tags: [pm-system, memory, session]
+---
+
+# AI-Native Patterns Skill
+
+## Core Principle
+
+> "If AI can't remember it, write it to a file."
+
+## Tiered Guideline System
+
+| Tier | What | When Loaded |
+|------|------|-------------|
+| Tier 0 | CLAUDE.md core | Always |
+| Tier 1 | Task-matched skills | On trigger |
+| Tier 2 | Memory bank | On-demand |
+| Tier 3 | Archive | Never auto |
+
+## Session Workflow
+
+```
+/aman start → Load context, surface memory
+[Work with task-matched skills]
+/aman end → Capture learnings, generate handoff
+```
+
+## Flashbulb Triggers
+
+Capture immediately when user says:
+- "Don't ever do that again"
+- "This was a mistake"
+- "Never do X" / "Always do Y"
+````
+
 ### Implementation Checklist for New Projects
 
 When implementing AmanPM in a new project:
@@ -3642,6 +4209,31 @@ backlog → ready → in_progress → review → done
 - [ ] 90/9/1 Rule applied to configuration ⚪
 - [ ] Tech Debt tracking (DEBT-XXX entries) 🔹
 - [ ] RCA/Postmortem infrastructure for learning capture 🔸
+
+### v5.0 Checklist Manifesto Features
+
+- [ ] `.aman-pm/checklists/` directory structure 🔹
+- [ ] `checklists/index.md` registry with taxonomy 🔹
+- [ ] CL-IMPL-DC-PreCommit.md (7 killer items) 🔹
+- [ ] CL-IMPL-DC-FeatureComplete.md (9 killer items) 🔹
+- [ ] CL-SEC-DC-SecurityReview.md (auth/security code) 🔸
+- [ ] CL-DBM-RD-MigrationValidation.md (database migrations) 🔸
+- [ ] `/aman checklist` commands in skill 🔹
+- [ ] `checklist-runner` skill for AI automation 🔹
+- [ ] Layer 2 quality-checklist.md triggered in workflow 🔹
+- [ ] Makefile targets for checklists 🔸
+- [ ] Auto-triggers at pause points (CLAUDE.md) 🔹
+
+### v5.1 Philosophy Skills Features
+
+- [ ] `.claude/skills/black-box-design/SKILL.md` 🔸
+- [ ] `.claude/skills/unix-philosophy/SKILL.md` 🔸
+- [ ] `.claude/skills/ai-native-patterns/SKILL.md` 🔸
+- [ ] Skill triggers added to CLAUDE.md 🔸
+- [ ] Skill registry updated with philosophy skills 🔸
+- [ ] Black-Box Design section in adoption guide 🔸
+- [ ] Unix Philosophy section in adoption guide 🔸
+- [ ] AI-Native Patterns section in adoption guide 🔸
 
 ### Integration Checklist
 
