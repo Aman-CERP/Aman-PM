@@ -44,9 +44,99 @@ That's it for 90% of sessions. You say what you want. The AI figures out the res
 | **Session Handoffs** | Structured session start/end rituals that capture learnings and maintain continuity |
 | **Release Management** | SemVer versioning with automated changelog generation |
 | **Learning Capture** | Discoveries and patterns are recorded and surfaced in future sessions |
-| **Analytics Dashboard** | Next.js dashboard with burndown charts, velocity tracking, and sprint forecasting |
+| **Analytics Dashboard** | Real-time intelligence layer — Monte Carlo forecasting, self-healing data, knowledge mining, and team analytics |
 
 ---
+
+## Analytics Dashboard
+
+AmanPM doesn't just manage work — it **understands it**. The built-in analytics dashboard transforms raw project data into actionable intelligence, giving you a real-time X-ray of your project's health, trajectory, and team patterns.
+
+This isn't another chart-dumping tool. Every metric is **designed to answer a specific question** before you think to ask it.
+
+### 🎯 Command Center — One Glance, Full Picture
+
+The Command Center distills your entire project into a single, scannable view. Sprint status, risk indicators, confidence levels, and AI-generated recommended actions — all in real time. The P50/P85 probability estimates tell you not just *when* you'll finish, but *how confident* you should be about it.
+
+<p align="center">
+  <a href="https://raw.githubusercontent.com/Aman-CERP/Aman-PM/main/screenshots/command-center-overview.png" target="_blank">
+    <img src="screenshots/command-center-overview.png" alt="Command Center Overview" width="280" />
+  </a>
+  &nbsp;
+  <a href="https://raw.githubusercontent.com/Aman-CERP/Aman-PM/main/screenshots/command-center-estimates.png" target="_blank">
+    <img src="screenshots/command-center-estimates.png" alt="Command Center Estimates" width="280" />
+  </a>
+  &nbsp;
+  <a href="https://raw.githubusercontent.com/Aman-CERP/Aman-PM/main/screenshots/command-center-forecast.png" target="_blank">
+    <img src="screenshots/command-center-forecast.png" alt="Command Center Forecast" width="280" />
+  </a>
+</p>
+
+### 📈 Forecast Engine — Monte Carlo, Not Gut Feelings
+
+Forget finger-in-the-air estimates. AmanPM runs **Monte Carlo simulations** on your historical velocity data to generate probability cones for project completion. Track how forecasts shift over time, identify estimation bias, and calibrate your team's prediction accuracy sprint-over-sprint.
+
+<p align="center">
+  <a href="https://raw.githubusercontent.com/Aman-CERP/Aman-PM/main/screenshots/forecast-projections.png" target="_blank">
+    <img src="screenshots/forecast-projections.png" alt="Forecast Projections" width="280" />
+  </a>
+  &nbsp;
+  <a href="https://raw.githubusercontent.com/Aman-CERP/Aman-PM/main/screenshots/forecast-probability-cone.png" target="_blank">
+    <img src="screenshots/forecast-probability-cone.png" alt="Forecast Probability Cone" width="280" />
+  </a>
+  &nbsp;
+  <a href="https://raw.githubusercontent.com/Aman-CERP/Aman-PM/main/screenshots/forecast-calibration.png" target="_blank">
+    <img src="screenshots/forecast-calibration.png" alt="Forecast Calibration" width="280" />
+  </a>
+</p>
+
+### 📋 Backlog Intelligence — Prioritize What Matters
+
+A unified view of all 285+ work items across epics, features, tasks, and tech debt — with smart filtering, sorting, and a **Priority vs. Complexity matrix** that instantly reveals quick wins and misallocated effort. Every item is tracked with status, size, sprint assignment, and quality indicators.
+
+<p align="center">
+  <a href="https://raw.githubusercontent.com/Aman-CERP/Aman-PM/main/screenshots/backlog-overview.png" target="_blank">
+    <img src="screenshots/backlog-overview.png" alt="Backlog Overview" width="420" />
+  </a>
+  &nbsp;
+  <a href="https://raw.githubusercontent.com/Aman-CERP/Aman-PM/main/screenshots/backlog-priority-matrix.png" target="_blank">
+    <img src="screenshots/backlog-priority-matrix.png" alt="Backlog Priority Matrix" width="420" />
+  </a>
+</p>
+
+### 🏥 Health Monitor — Self-Healing Data Integrity
+
+Data quality isn't optional — it's infrastructure. The Health page continuously validates cross-references, detects discrepancies, and tracks **auto-fix rates**. Think of it as a continuous integration pipeline for your project data — broken links, orphaned items, and stale references are surfaced and healed automatically.
+
+<p align="center">
+  <a href="https://raw.githubusercontent.com/Aman-CERP/Aman-PM/main/screenshots/health-dashboard.png" target="_blank">
+    <img src="screenshots/health-dashboard.png" alt="Health Dashboard" width="420" />
+  </a>
+  &nbsp;
+  <a href="https://raw.githubusercontent.com/Aman-CERP/Aman-PM/main/screenshots/health-data-quality.png" target="_blank">
+    <img src="screenshots/health-data-quality.png" alt="Health Data Quality" width="420" />
+  </a>
+</p>
+
+### 🧠 Knowledge Engine — Lessons That Compound
+
+Every session generates insights. Most tools lose them. AmanPM **mines, categorizes, and surfaces** them. With 176+ captured insights across 11 categories, the Knowledge Engine builds a searchable corpus of team wisdom — playbooks, patterns, and anti-patterns that make every future session smarter than the last.
+
+<p align="center">
+  <a href="https://raw.githubusercontent.com/Aman-CERP/Aman-PM/main/screenshots/learnings-knowledge-engine.png" target="_blank">
+    <img src="screenshots/learnings-knowledge-engine.png" alt="Learnings Knowledge Engine" width="280" />
+  </a>
+  &nbsp;
+  <a href="https://raw.githubusercontent.com/Aman-CERP/Aman-PM/main/screenshots/learnings-category-map.png" target="_blank">
+    <img src="screenshots/learnings-category-map.png" alt="Learnings Category Map" width="280" />
+  </a>
+  &nbsp;
+  <a href="https://raw.githubusercontent.com/Aman-CERP/Aman-PM/main/screenshots/learnings-feed.png" target="_blank">
+    <img src="screenshots/learnings-feed.png" alt="Learnings Feed" width="280" />
+  </a>
+</p>
+
+> 💡 *Click any screenshot to view the full-resolution image.*
 
 ## How It Works
 
